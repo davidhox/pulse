@@ -71,12 +71,19 @@ async function fetchSource(source: FeedSource): Promise<CachedFeed> {
     articles = normalizeRssArticles(feed, source);
   }
 
-  // Apply keyword filter if configured
+  // Apply keyword filters if configured
   if (source.filterKeywords && source.filterKeywords.length > 0) {
     const keywords = source.filterKeywords.map((k) => k.toLowerCase());
     articles = articles.filter((a) => {
       const text = `${a.title} ${a.summary}`.toLowerCase();
       return keywords.some((kw) => text.includes(kw));
+    });
+  }
+  if (source.excludeKeywords && source.excludeKeywords.length > 0) {
+    const excluded = source.excludeKeywords.map((k) => k.toLowerCase());
+    articles = articles.filter((a) => {
+      const text = `${a.title} ${a.summary}`.toLowerCase();
+      return !excluded.some((kw) => text.includes(kw));
     });
   }
 

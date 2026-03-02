@@ -22,6 +22,8 @@ export interface FeedSource {
   scraperConfig?: ScraperConfig;
   /** Only keep articles whose title or summary contain at least one keyword (case-insensitive) */
   filterKeywords?: string[];
+  /** Drop articles whose title or summary contain any of these keywords (case-insensitive) */
+  excludeKeywords?: string[];
   /** Skip Gemini translation even if non-English */
   skipTranslation?: boolean;
 }

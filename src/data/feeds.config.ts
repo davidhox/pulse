@@ -86,19 +86,27 @@ export const feedSources: FeedSource[] = [
       dateSelector: ".story-header .date",
       followLinks: true,
     },
-    filterKeywords: [
-      // Icelandic top-flight & league terms
-      "Besta deild", "Lengjudeild", "Lengjubikar",
-      "1. deild", "2. deild", "Bikarkeppni",
-      "Íslenski", "íslensku", "íslensk",
-      // Top-flight clubs
-      "KR", "Breiðablik", "Breidablik", "Valur", "Víkingur", "Vikingur",
-      "FH", "Stjarnan", "Selfoss", "Keflavík", "Keflavik", "Fylkir",
-      "Fram", "ÍBV", "IBV", "Þróttur", "Throttur", "HK", "Haukar",
-      "Grindavík", "Grindavik", "ÍA", "Akranes", "Fjölnir", "Fjolnir",
-      "KA", "Leiknir", "Afturelding", "Magni",
-      // Domestic context
-      "Go Ahead Eagles", "Alfons", "Stefán Ingi",
+    excludeKeywords: [
+      // Foreign country prefixes (Icelandic names)
+      "England:", "Frakkland:", "Spánn:", "Ítalía:", "Þýskaland:",
+      "Hollandi:", "Portúgal:", "Skotland:", "Tyrkland:", "Belgía:",
+      "Austurríki:", "Sviss:", "Danmörk:", "Svíþjóð:", "Noregur:",
+      "Finnland:", "Pólland:", "Króatía:", "Serbía:", "Grikkland:",
+      // Foreign league names
+      "Premier League", "La Liga", "Serie A", "Bundesliga", "Ligue 1",
+      "Champions League", "Meistaradeildin", "Evrópudeildin",
+      // Common international article markers
+      "Einkunnir úr enska", "Einkunnir úr spænska", "Einkunnir úr ítalska",
+      "Einkunnir úr þýska", "Einkunnir úr franska",
+      // Foreign clubs & figures that appear without country prefix
+      "Arsenal", "Liverpool", "Man Utd", "Man City", "Chelsea", "Tottenham",
+      "Barcelona", "Real Madrid", "Atletico", "Bayern", "Dortmund",
+      "Juventus", "Inter Milan", "AC Milan", "Napoli", "Roma",
+      "PSG", "Marseille", "Lyon", "Ajax", "Benfica", "Porto",
+      "Sunderland", "Leeds", "Leicester", "Aston Villa", "Newcastle",
+      "Everton", "West Ham", "Wolves", "Brighton", "Brentford",
+      "Arteta", "Guardiola", "Klopp", "Ancelotti", "Mourinho",
+      "Haaland", "Salah", "Mbappé", "Mbappe",
     ],
   },
 
