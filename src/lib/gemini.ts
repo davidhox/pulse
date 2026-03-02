@@ -1,12 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Article, SentimentSignal } from "./types";
 
-// Free tier: 5 requests/min for gemini-2.5-flash
-// Process 2 articles per batch, 15s between batches = ~4 req/min (safe margin)
-const BATCH_SIZE = 2;
-const BATCH_DELAY_MS = 15000;
-const MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 10000;
+// Paid tier: higher rate limits for gemini-2.5-flash
+const BATCH_SIZE = 5;
+const BATCH_DELAY_MS = 2000;
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 5000;
 
 function getClient() {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -89,12 +88,23 @@ Title: ${article.title}
 Summary: ${article.summary || "(empty)"}`;
 
     try {
+      console.log(`[gemini] Translating: "${article.title.slice(0, 40)}..." (${langName})`);
       const result = await callWithRetry(() => model.generateContent(prompt));
-      const text = result.response.text().trim();
-      const jsonStr = text.replace(/^```json?\s*/, "").replace(/\s*```$/, "");
-      const parsed = JSON.parse(jsonStr);
+      const rawText = result.response.text();
+      const text = rawText.trim();
+      const jsonStr = text
+        .replace(/^```json?\s*/, "")
+        .replace(/\s*```\s*$/, "");
 
-      const signals = validateSignals(parsed.signals);
+      let parsed: { translation?: { title?: string; summary?: string }; signals?: unknown[] };
+      try {
+        parsed = JSON.parse(jsonStr);
+      } catch {
+        console.error(`[gemini] JSON parse failed. Raw response:\n${rawText.slice(0, 500)}`);
+        return { ...article, sentimentProcessed: true };
+      }
+
+      const signals = validateSignals(parsed.signals ?? []);
 
       return {
         ...article,

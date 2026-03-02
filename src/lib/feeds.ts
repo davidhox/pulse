@@ -91,8 +91,13 @@ async function fetchSource(source: FeedSource): Promise<CachedFeed> {
   // Process through Gemini in background (translation + sentiment)
   // Updates cache when done — next page load gets enriched articles
   processArticlesWithGemini(articles, source.skipTranslation).then((enriched) => {
+    const translated = enriched.filter((a) => a.isTranslated).length;
+    const withSignals = enriched.filter((a) => a.sentimentSignals.length > 0).length;
+    console.log(`[gemini] Done ${source.id}: ${translated} translated, ${withSignals} with signals`);
     setCache(source.id, { ...cached, articles: enriched });
-  }).catch(() => {});
+  }).catch((err) => {
+    console.error(`[gemini] Background processing failed for ${source.id}:`, err);
+  });
 
   return cached;
 }
