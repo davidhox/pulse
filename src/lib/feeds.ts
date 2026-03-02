@@ -71,6 +71,15 @@ async function fetchSource(source: FeedSource): Promise<CachedFeed> {
     articles = normalizeRssArticles(feed, source);
   }
 
+  // Apply keyword filter if configured
+  if (source.filterKeywords && source.filterKeywords.length > 0) {
+    const keywords = source.filterKeywords.map((k) => k.toLowerCase());
+    articles = articles.filter((a) => {
+      const text = `${a.title} ${a.summary}`.toLowerCase();
+      return keywords.some((kw) => text.includes(kw));
+    });
+  }
+
   // Cache raw articles immediately so page loads aren't blocked
   const cached: CachedFeed = {
     articles,
@@ -81,7 +90,7 @@ async function fetchSource(source: FeedSource): Promise<CachedFeed> {
 
   // Process through Gemini in background (translation + sentiment)
   // Updates cache when done — next page load gets enriched articles
-  processArticlesWithGemini(articles).then((enriched) => {
+  processArticlesWithGemini(articles, source.skipTranslation).then((enriched) => {
     setCache(source.id, { ...cached, articles: enriched });
   }).catch(() => {});
 

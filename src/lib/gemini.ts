@@ -56,10 +56,11 @@ async function callWithRetry<T>(fn: () => Promise<T>): Promise<T> {
  */
 async function processArticle(
   article: Article,
-  client: GoogleGenerativeAI
+  client: GoogleGenerativeAI,
+  skipTranslation?: boolean
 ): Promise<Article> {
   const needsTranslation =
-    article.originalLanguage !== "en" && !article.isTranslated;
+    !skipTranslation && article.originalLanguage !== "en" && !article.isTranslated;
 
   const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
 
@@ -168,7 +169,8 @@ function validateSignals(raw: unknown[]): SentimentSignal[] {
 }
 
 export async function processArticlesWithGemini(
-  articles: Article[]
+  articles: Article[],
+  skipTranslation?: boolean
 ): Promise<Article[]> {
   const client = getClient();
   if (!client) {
@@ -187,7 +189,7 @@ export async function processArticlesWithGemini(
     }
 
     const results = await Promise.allSettled(
-      batchIndices.map((idx) => processArticle(processed[idx], client))
+      batchIndices.map((idx) => processArticle(processed[idx], client, skipTranslation))
     );
 
     for (let j = 0; j < results.length; j++) {

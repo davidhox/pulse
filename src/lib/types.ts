@@ -20,6 +20,10 @@ export interface FeedSource {
   priority: number; // 1 = highest
   type: "rss" | "scrape";
   scraperConfig?: ScraperConfig;
+  /** Only keep articles whose title or summary contain at least one keyword (case-insensitive) */
+  filterKeywords?: string[];
+  /** Skip Gemini translation even if non-English */
+  skipTranslation?: boolean;
 }
 
 export type SentimentCategory =

@@ -9,16 +9,18 @@ import { FeedSource } from "@/lib/types";
  * The app derives all navigation (countries, sports) from this list.
  *
  * Fields:
- *   id            — Unique slug (used for caching)
- *   name          — Display name of the source
- *   url           — RSS feed URL or listing page URL (for scrape sources)
- *   country       — Country code (lowercase, e.g. "il", "is")
- *   sport         — Sport slug (e.g. "football", "basketball")
- *   league        — Optional league name
- *   language      — Language code (e.g. "en", "he", "is", "sq")
- *   priority      — 1 = highest, shown first when sources overlap
- *   type          — "rss" for RSS/Atom feeds, "scrape" for HTML scraping
- *   scraperConfig — Required for scrape sources: CSS selectors for extraction
+ *   id              — Unique slug (used for caching)
+ *   name            — Display name of the source
+ *   url             — RSS feed URL or listing page URL (for scrape sources)
+ *   country         — Country code (lowercase, e.g. "il", "is")
+ *   sport           — Sport slug (e.g. "football", "basketball")
+ *   league          — Optional league name
+ *   language        — Language code (e.g. "en", "he", "is", "sq")
+ *   priority        — 1 = highest, shown first when sources overlap
+ *   type            — "rss" for RSS/Atom feeds, "scrape" for HTML scraping
+ *   scraperConfig   — Required for scrape sources: CSS selectors for extraction
+ *   filterKeywords  — Only keep articles matching at least one keyword
+ *   skipTranslation — Don't translate even if non-English
  */
 
 export const feedSources: FeedSource[] = [
@@ -64,7 +66,7 @@ export const feedSources: FeedSource[] = [
     },
   },
 
-  // --- Iceland (Icelandic — scraped) ---
+  // --- Iceland (Icelandic — scraped, filtered to domestic only) ---
   {
     id: "fotbolti",
     name: "Fotbolti.net",
@@ -84,6 +86,20 @@ export const feedSources: FeedSource[] = [
       dateSelector: ".story-header .date",
       followLinks: true,
     },
+    filterKeywords: [
+      // Icelandic top-flight & league terms
+      "Besta deild", "Lengjudeild", "Lengjubikar",
+      "1. deild", "2. deild", "Bikarkeppni",
+      "Íslenski", "íslensku", "íslensk",
+      // Top-flight clubs
+      "KR", "Breiðablik", "Breidablik", "Valur", "Víkingur", "Vikingur",
+      "FH", "Stjarnan", "Selfoss", "Keflavík", "Keflavik", "Fylkir",
+      "Fram", "ÍBV", "IBV", "Þróttur", "Throttur", "HK", "Haukar",
+      "Grindavík", "Grindavik", "ÍA", "Akranes", "Fjölnir", "Fjolnir",
+      "KA", "Leiknir", "Afturelding", "Magni",
+      // Domestic context
+      "Go Ahead Eagles", "Alfons", "Stefán Ingi",
+    ],
   },
 
   // --- Baltic States (English — RSS) ---
@@ -98,15 +114,17 @@ export const feedSources: FeedSource[] = [
     type: "rss",
   },
 
-  // --- Albania (Albanian — RSS) ---
+  // --- Albania (Albanian — RSS, local league only, no translation) ---
   {
-    id: "panorama-sport",
-    name: "Panorama Sport",
-    url: "https://panorama.com.al/sport/feed/",
+    id: "panorama-superiore",
+    name: "Panorama Kampionati",
+    url: "https://www.panorama.com.al/sport/category/kategoria-superiore/feed/",
     country: "al",
     sport: "football",
+    league: "Kategoria Superiore",
     language: "sq",
     priority: 1,
     type: "rss",
+    skipTranslation: true,
   },
 ];
