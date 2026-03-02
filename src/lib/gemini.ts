@@ -1,7 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 import { Article, SentimentSignal } from "./types";
 
-// Paid tier: higher rate limits for gemini-2.5-flash
 const BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 2000;
 const MAX_RETRIES = 3;
@@ -49,10 +48,41 @@ async function callWithRetry<T>(fn: () => Promise<T>): Promise<T> {
   throw new Error("Unreachable");
 }
 
-/**
- * Single Gemini call that handles both translation and sentiment analysis.
- * Reduces API calls from 2 per article to 1.
- */
+const SIGNAL_ITEM_SCHEMA: Schema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    category: { type: SchemaType.STRING },
+    severity: { type: SchemaType.STRING },
+    label: { type: SchemaType.STRING },
+    detail: { type: SchemaType.STRING },
+  },
+  required: ["category", "severity", "label"],
+};
+
+const TRANSLATE_SCHEMA: Schema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    translation: {
+      type: SchemaType.OBJECT,
+      properties: {
+        title: { type: SchemaType.STRING },
+        summary: { type: SchemaType.STRING },
+      },
+      required: ["title", "summary"],
+    },
+    signals: {
+      type: SchemaType.ARRAY,
+      items: SIGNAL_ITEM_SCHEMA,
+    },
+  },
+  required: ["translation", "signals"],
+};
+
+const SENTIMENT_SCHEMA: Schema = {
+  type: SchemaType.ARRAY,
+  items: SIGNAL_ITEM_SCHEMA,
+};
+
 async function processArticle(
   article: Article,
   client: GoogleGenerativeAI,
@@ -61,49 +91,35 @@ async function processArticle(
   const needsTranslation =
     !skipTranslation && article.originalLanguage !== "en" && !article.isTranslated;
 
-  const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
-
   if (needsTranslation) {
     const langName =
       NON_ENGLISH_LANGUAGES[article.originalLanguage] ||
       article.originalLanguage;
+
+    const model = client.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: TRANSLATE_SCHEMA,
+      },
+    });
 
     const prompt = `You are analyzing a ${langName} sports article. Do TWO things:
 
 1. TRANSLATE the title and summary to English.
 2. ANALYZE for betting-relevant signals (injuries, suspensions, rotation, venue changes, travel fatigue, positive returns/form).
 
-Return ONLY valid JSON (no markdown fences), in this exact format:
-{
-  "translation": { "title": "...", "summary": "..." },
-  "signals": [
-    { "category": "injury|suspension|rotation|venue|travel|positive", "severity": "red|yellow|green", "label": "2-4 words", "detail": "one sentence" }
-  ]
-}
-
-If no betting signals, use "signals": [].
+Category must be one of: injury, suspension, rotation, venue, travel, positive.
+Severity must be one of: red (major impact), yellow (moderate), green (positive/minor).
+If no betting signals, use an empty signals array.
 If the summary is empty, translate only the title and set summary to "".
 
 Title: ${article.title}
 Summary: ${article.summary || "(empty)"}`;
 
     try {
-      console.log(`[gemini] Translating: "${article.title.slice(0, 40)}..." (${langName})`);
       const result = await callWithRetry(() => model.generateContent(prompt));
-      const rawText = result.response.text();
-      const text = rawText.trim();
-      const jsonStr = text
-        .replace(/^```json?\s*/, "")
-        .replace(/\s*```\s*$/, "");
-
-      let parsed: { translation?: { title?: string; summary?: string }; signals?: unknown[] };
-      try {
-        parsed = JSON.parse(jsonStr);
-      } catch {
-        console.error(`[gemini] JSON parse failed. Raw response:\n${rawText.slice(0, 500)}`);
-        return { ...article, sentimentProcessed: true };
-      }
-
+      const parsed = JSON.parse(result.response.text());
       const signals = validateSignals(parsed.signals ?? []);
 
       return {
@@ -124,20 +140,27 @@ Summary: ${article.summary || "(empty)"}`;
       return { ...article, sentimentProcessed: true };
     }
   } else {
-    // English article — sentiment only
-    const prompt = `Analyze this sports article for betting-relevant signals. Return ONLY a valid JSON array (no markdown fences). Each item: { "category": "injury|suspension|rotation|venue|travel|positive", "severity": "red|yellow|green", "label": "2-4 words", "detail": "one sentence" }.
+    // English or skipTranslation — sentiment only
+    const model = client.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: SENTIMENT_SCHEMA,
+      },
+    });
 
-If no signals, return [].
+    const prompt = `Analyze this sports article for betting-relevant signals.
+
+Category must be one of: injury, suspension, rotation, venue, travel, positive.
+Severity must be one of: red (major impact), yellow (moderate), green (positive/minor).
+If no signals found, return an empty array.
 
 Title: ${article.title}
 Summary: ${article.summary || "(empty)"}`;
 
     try {
       const result = await callWithRetry(() => model.generateContent(prompt));
-      const text = result.response.text().trim();
-      const jsonStr = text.replace(/^```json?\s*/, "").replace(/\s*```$/, "");
-      const parsed = JSON.parse(jsonStr);
-
+      const parsed = JSON.parse(result.response.text());
       const signals = validateSignals(Array.isArray(parsed) ? parsed : []);
 
       return {
@@ -159,12 +182,7 @@ function validateSignals(raw: unknown[]): SentimentSignal[] {
   if (!Array.isArray(raw)) return [];
 
   const validCategories = new Set([
-    "injury",
-    "suspension",
-    "rotation",
-    "venue",
-    "travel",
-    "positive",
+    "injury", "suspension", "rotation", "venue", "travel", "positive",
   ]);
   const validSeverities = new Set(["red", "yellow", "green"]);
 
@@ -184,9 +202,7 @@ export async function processArticlesWithGemini(
 ): Promise<Article[]> {
   const client = getClient();
   if (!client) {
-    console.warn(
-      "[gemini] No GEMINI_API_KEY set — skipping translation and sentiment"
-    );
+    console.warn("[gemini] No GEMINI_API_KEY set — skipping translation and sentiment");
     return articles;
   }
 
@@ -210,7 +226,6 @@ export async function processArticlesWithGemini(
       }
     }
 
-    // Delay between batches to stay within rate limits
     if (i + BATCH_SIZE < processed.length) {
       await delay(BATCH_DELAY_MS);
     }
