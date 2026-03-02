@@ -2,7 +2,7 @@ import { CachedFeed } from "./types";
 import * as fs from "fs";
 import * as path from "path";
 
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 const CACHE_DIR = "/tmp/pulse-cache";
 
 const memoryCache = new Map<string, CachedFeed>();
