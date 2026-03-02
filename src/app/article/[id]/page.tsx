@@ -3,9 +3,12 @@ import { getCountry } from "@/data/countries";
 import { timeAgo } from "@/lib/utils";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, ExternalLink, Clock } from "lucide-react";
+import { ChevronLeft, ExternalLink, Clock, Languages } from "lucide-react";
+import SentimentBadges from "@/components/SentimentBadges";
 
 export const dynamic = "force-dynamic";
+
+const RTL_LANGUAGES = new Set(["he", "ar"]);
 
 export default async function ArticlePage({
   params,
@@ -21,6 +24,7 @@ export default async function ArticlePage({
   if (!article) notFound();
 
   const country = getCountry(article.country);
+  const isRtl = RTL_LANGUAGES.has(article.originalLanguage);
 
   return (
     <>
@@ -47,6 +51,15 @@ export default async function ArticlePage({
           )}
           <span className="text-border">|</span>
           <span>{article.source.name}</span>
+          {article.isTranslated && (
+            <>
+              <span className="text-border">|</span>
+              <span className="inline-flex items-center gap-1 text-accent/70">
+                <Languages size={12} />
+                Translated from {article.originalLanguage.toUpperCase()}
+              </span>
+            </>
+          )}
         </div>
 
         {/* Title */}
@@ -68,6 +81,16 @@ export default async function ArticlePage({
           </time>
         </div>
 
+        {/* Betting Signals */}
+        {article.sentimentSignals && article.sentimentSignals.length > 0 && (
+          <div className="mb-6 bg-background/50 border border-border rounded-lg p-4">
+            <h2 className="text-sm font-semibold mb-3 text-foreground/80">
+              Betting Signals
+            </h2>
+            <SentimentBadges signals={article.sentimentSignals} compact={false} />
+          </div>
+        )}
+
         {/* Image */}
         {article.imageUrl && (
           <div className="mb-6 rounded-lg overflow-hidden">
@@ -85,6 +108,26 @@ export default async function ArticlePage({
           <div className="text-sm leading-relaxed text-foreground/90 mb-6 whitespace-pre-line">
             {article.summary}
           </div>
+        )}
+
+        {/* Original text (for translated articles) */}
+        {article.isTranslated && (article.originalTitle || article.originalSummary) && (
+          <details className="mb-6 border border-border/50 rounded-lg">
+            <summary className="px-4 py-3 text-xs text-muted cursor-pointer hover:text-foreground transition-colors">
+              View original ({article.originalLanguage.toUpperCase()})
+            </summary>
+            <div
+              className="px-4 pb-4 text-sm text-muted leading-relaxed"
+              dir={isRtl ? "rtl" : "ltr"}
+            >
+              {article.originalTitle && (
+                <p className="font-semibold mb-2">{article.originalTitle}</p>
+              )}
+              {article.originalSummary && (
+                <p className="whitespace-pre-line">{article.originalSummary}</p>
+              )}
+            </div>
+          </details>
         )}
 
         {/* CTA */}

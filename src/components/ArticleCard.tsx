@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Article } from "@/lib/types";
 import { timeAgo, truncate } from "@/lib/utils";
 import { getCountry } from "@/data/countries";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Languages } from "lucide-react";
+import SentimentBadges from "./SentimentBadges";
 
 export default function ArticleCard({ article }: { article: Article }) {
   const country = getCountry(article.country);
@@ -23,6 +24,15 @@ export default function ArticleCard({ article }: { article: Article }) {
             )}
             <span className="text-border">|</span>
             <span>{article.source.name}</span>
+            {article.isTranslated && (
+              <>
+                <span className="text-border">|</span>
+                <span className="inline-flex items-center gap-0.5 text-accent/70">
+                  <Languages size={11} />
+                  Translated
+                </span>
+              </>
+            )}
           </div>
 
           {/* Title */}
@@ -35,10 +45,13 @@ export default function ArticleCard({ article }: { article: Article }) {
 
           {/* Summary */}
           {article.summary && (
-            <p className="text-xs text-muted leading-relaxed">
+            <p className="text-xs text-muted leading-relaxed mb-2">
               {truncate(article.summary, 180)}
             </p>
           )}
+
+          {/* Sentiment badges */}
+          <SentimentBadges signals={article.sentimentSignals} />
         </div>
 
         {/* Thumbnail */}

@@ -1,24 +1,12 @@
 import { Country } from "@/lib/types";
 
 export const countries: Record<string, Country> = {
-  gb: { code: "gb", name: "United Kingdom", flag: "🇬🇧" },
-  us: { code: "us", name: "United States", flag: "🇺🇸" },
-  es: { code: "es", name: "Spain", flag: "🇪🇸" },
-  fr: { code: "fr", name: "France", flag: "🇫🇷" },
-  de: { code: "de", name: "Germany", flag: "🇩🇪" },
-  it: { code: "it", name: "Italy", flag: "🇮🇹" },
-  pt: { code: "pt", name: "Portugal", flag: "🇵🇹" },
-  nl: { code: "nl", name: "Netherlands", flag: "🇳🇱" },
-  br: { code: "br", name: "Brazil", flag: "🇧🇷" },
-  ar: { code: "ar", name: "Argentina", flag: "🇦🇷" },
-  au: { code: "au", name: "Australia", flag: "🇦🇺" },
-  tr: { code: "tr", name: "Turkey", flag: "🇹🇷" },
-  gr: { code: "gr", name: "Greece", flag: "🇬🇷" },
-  rs: { code: "rs", name: "Serbia", flag: "🇷🇸" },
-  hr: { code: "hr", name: "Croatia", flag: "🇭🇷" },
-  pl: { code: "pl", name: "Poland", flag: "🇵🇱" },
+  il: { code: "il", name: "Israel", flag: "\u{1F1EE}\u{1F1F1}" },
+  is: { code: "is", name: "Iceland", flag: "\u{1F1EE}\u{1F1F8}" },
+  al: { code: "al", name: "Albania", flag: "\u{1F1E6}\u{1F1F1}" },
+  baltic: { code: "baltic", name: "Baltic States", flag: "\u{1F30D}" },
 };
 
 export function getCountry(code: string): Country {
-  return countries[code] ?? { code, name: code.toUpperCase(), flag: "🏳️" };
+  return countries[code] ?? { code, name: code.toUpperCase(), flag: "\u{1F3F3}\u{FE0F}" };
 }

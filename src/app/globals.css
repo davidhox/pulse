@@ -10,6 +10,7 @@
   --accent: #22d3ee;
   --accent-hover: #06b6d4;
   --danger: #ef4444;
+  --warning: #f59e0b;
   --success: #22c55e;
   --sidebar: #0f172a;
 }
@@ -24,6 +25,7 @@
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-danger: var(--danger);
+  --color-warning: var(--warning);
   --color-success: var(--success);
   --color-sidebar: var(--sidebar);
   --font-sans: var(--font-geist-sans);

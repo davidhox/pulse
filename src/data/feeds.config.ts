@@ -5,100 +5,108 @@ import { FeedSource } from "@/lib/types";
  *  PULSE — Feed Sources Configuration
  * ============================================
  *
- * Edit this file to add or remove RSS/Atom feed sources.
+ * Edit this file to add or remove feed sources.
  * The app derives all navigation (countries, sports) from this list.
  *
  * Fields:
- *   id       — Unique slug (used for caching)
- *   name     — Display name of the source
- *   url      — RSS/Atom feed URL
- *   country  — Country code (lowercase, e.g. "gb", "us")
- *   sport    — Sport slug (e.g. "football", "basketball", "tennis")
- *   league   — Optional league name (e.g. "Premier League", "NBA")
- *   language — Language code (e.g. "en", "es")
- *   priority — 1 = highest, shown first when sources overlap
+ *   id            — Unique slug (used for caching)
+ *   name          — Display name of the source
+ *   url           — RSS feed URL or listing page URL (for scrape sources)
+ *   country       — Country code (lowercase, e.g. "il", "is")
+ *   sport         — Sport slug (e.g. "football", "basketball")
+ *   league        — Optional league name
+ *   language      — Language code (e.g. "en", "he", "is", "sq")
+ *   priority      — 1 = highest, shown first when sources overlap
+ *   type          — "rss" for RSS/Atom feeds, "scrape" for HTML scraping
+ *   scraperConfig — Required for scrape sources: CSS selectors for extraction
  */
 
 export const feedSources: FeedSource[] = [
-  // --- United Kingdom ---
+  // --- Israel (Hebrew — scraped) ---
   {
-    id: "bbc-sport",
-    name: "BBC Sport",
-    url: "https://feeds.bbci.co.uk/sport/rss.xml",
-    country: "gb",
+    id: "doublepass",
+    name: "Double Pass",
+    url: "https://doublepass.sport5.co.il",
+    country: "il",
     sport: "football",
-    language: "en",
+    language: "he",
     priority: 1,
+    type: "scrape",
+    scraperConfig: {
+      baseUrl: "https://doublepass.sport5.co.il",
+      articleLinkSelector: 'a[href^="story.php?id="]',
+      titleSelector: ".box_top h1",
+      summarySelector: "strong.skyBlue, .box_center p",
+      imageSelector: ".report_img_div img",
+      dateSelector: ".report_page_date .flh_pad",
+      followLinks: true,
+    },
   },
   {
-    id: "bbc-football",
-    name: "BBC Football",
-    url: "https://feeds.bbci.co.uk/sport/football/rss.xml",
-    country: "gb",
+    id: "goler1",
+    name: "Goler1",
+    url: "https://www.goler1.co.il",
+    country: "il",
     sport: "football",
-    league: "Premier League",
-    language: "en",
-    priority: 1,
-  },
-  {
-    id: "bbc-tennis",
-    name: "BBC Tennis",
-    url: "https://feeds.bbci.co.uk/sport/tennis/rss.xml",
-    country: "gb",
-    sport: "tennis",
-    language: "en",
-    priority: 1,
-  },
-  {
-    id: "bbc-basketball",
-    name: "BBC Basketball",
-    url: "https://feeds.bbci.co.uk/sport/basketball/rss.xml",
-    country: "gb",
-    sport: "basketball",
-    language: "en",
+    language: "he",
     priority: 2,
+    type: "scrape",
+    scraperConfig: {
+      baseUrl: "https://www.goler1.co.il",
+      articleLinkSelector:
+        '#main_articles .slides a[href*="/Article/"], .articles_row a[href*="Article/"]',
+      titleSelector: ".articel__details h2",
+      summarySelector: ".articel__details h3",
+      imageSelector: ".articel__details img",
+      dateSelector: ".articel__meta li:nth-child(2)",
+      dateFormat: "DD-MM-YYYY",
+      followLinks: true,
+    },
   },
 
-  // --- United States ---
+  // --- Iceland (Icelandic — scraped) ---
   {
-    id: "espn-top",
-    name: "ESPN Top Headlines",
-    url: "https://www.espn.com/espn/rss/news",
-    country: "us",
+    id: "fotbolti",
+    name: "Fotbolti.net",
+    url: "https://fotbolti.net",
+    country: "is",
+    sport: "football",
+    language: "is",
+    priority: 1,
+    type: "scrape",
+    scraperConfig: {
+      baseUrl: "https://fotbolti.net",
+      articleLinkSelector:
+        '#main-stories-carousel a[href^="/news/"], .news-list-row a[href^="/news/"]',
+      titleSelector: ".story-title .story-title-icon",
+      summarySelector: "#first-part",
+      imageSelector: ".story-image img",
+      dateSelector: ".story-header .date",
+      followLinks: true,
+    },
+  },
+
+  // --- Baltic States (English — RSS) ---
+  {
+    id: "baltic-football",
+    name: "Baltic Football News",
+    url: "https://balticfootballnews.com/feed/",
+    country: "baltic",
     sport: "football",
     language: "en",
     priority: 1,
-  },
-  {
-    id: "espn-nba",
-    name: "ESPN NBA",
-    url: "https://www.espn.com/espn/rss/nba/news",
-    country: "us",
-    sport: "basketball",
-    league: "NBA",
-    language: "en",
-    priority: 1,
+    type: "rss",
   },
 
-  // --- Europe ---
+  // --- Albania (Albanian — RSS) ---
   {
-    id: "marca-futbol",
-    name: "Marca Fútbol",
-    url: "https://e00-marca.uecdn.es/rss/futbol/futbol.xml",
-    country: "es",
+    id: "panorama-sport",
+    name: "Panorama Sport",
+    url: "https://panorama.com.al/sport/feed/",
+    country: "al",
     sport: "football",
-    league: "La Liga",
-    language: "es",
+    language: "sq",
     priority: 1,
-  },
-  {
-    id: "lequipe-foot",
-    name: "L'Équipe Football",
-    url: "https://dwh.lequipe.fr/api/edito/rss?path=/Football/",
-    country: "fr",
-    sport: "football",
-    league: "Ligue 1",
-    language: "fr",
-    priority: 1,
+    type: "rss",
   },
 ];

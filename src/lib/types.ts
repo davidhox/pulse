@@ -1,3 +1,14 @@
+export interface ScraperConfig {
+  baseUrl: string;
+  articleLinkSelector: string;
+  titleSelector: string;
+  summarySelector?: string;
+  imageSelector?: string;
+  dateSelector?: string;
+  dateFormat?: string;
+  followLinks?: boolean;
+}
+
 export interface FeedSource {
   id: string;
   name: string;
@@ -7,6 +18,25 @@ export interface FeedSource {
   league?: string;
   language: string;
   priority: number; // 1 = highest
+  type: "rss" | "scrape";
+  scraperConfig?: ScraperConfig;
+}
+
+export type SentimentCategory =
+  | "injury"
+  | "suspension"
+  | "rotation"
+  | "venue"
+  | "travel"
+  | "positive";
+
+export type SentimentSeverity = "red" | "yellow" | "green";
+
+export interface SentimentSignal {
+  category: SentimentCategory;
+  severity: SentimentSeverity;
+  label: string;
+  detail?: string;
 }
 
 export interface Article {
@@ -23,6 +53,12 @@ export interface Article {
   sport: string;
   league?: string;
   imageUrl?: string;
+  originalLanguage: string;
+  originalTitle?: string;
+  originalSummary?: string;
+  isTranslated: boolean;
+  sentimentSignals: SentimentSignal[];
+  sentimentProcessed: boolean;
 }
 
 export interface CachedFeed {

@@ -3,6 +3,8 @@ import { feedSources } from "@/data/feeds.config";
 import { Article, CachedFeed, FeedFilters, FeedSource } from "./types";
 import { getCached, getStale, isFresh, setCache } from "./cache";
 import { hashId, stripHtml } from "./utils";
+import { scrapeSource } from "./scraper";
+import { processArticlesWithGemini } from "./gemini";
 
 const parser = new Parser({
   timeout: 10000,
@@ -11,7 +13,7 @@ const parser = new Parser({
   },
 });
 
-function normalizeArticles(
+function normalizeRssArticles(
   feed: Parser.Output<Record<string, unknown>>,
   source: FeedSource
 ): Article[] {
@@ -51,19 +53,38 @@ function normalizeArticles(
       sport: source.sport,
       league: source.league,
       imageUrl,
+      originalLanguage: source.language,
+      isTranslated: false,
+      sentimentSignals: [],
+      sentimentProcessed: false,
     };
   });
 }
 
 async function fetchSource(source: FeedSource): Promise<CachedFeed> {
-  const feed = await parser.parseURL(source.url);
-  const articles = normalizeArticles(feed, source);
+  let articles: Article[];
+
+  if (source.type === "scrape") {
+    articles = await scrapeSource(source);
+  } else {
+    const feed = await parser.parseURL(source.url);
+    articles = normalizeRssArticles(feed, source);
+  }
+
+  // Cache raw articles immediately so page loads aren't blocked
   const cached: CachedFeed = {
     articles,
     fetchedAt: Date.now(),
     sourceId: source.id,
   };
   setCache(source.id, cached);
+
+  // Process through Gemini in background (translation + sentiment)
+  // Updates cache when done — next page load gets enriched articles
+  processArticlesWithGemini(articles).then((enriched) => {
+    setCache(source.id, { ...cached, articles: enriched });
+  }).catch(() => {});
+
   return cached;
 }
 
@@ -85,7 +106,8 @@ async function getSourceArticles(source: FeedSource): Promise<Article[]> {
   try {
     const cached = await fetchSource(source);
     return cached.articles;
-  } catch {
+  } catch (err) {
+    console.error(`[feeds] Failed to fetch ${source.name}:`, err);
     return [];
   }
 }
