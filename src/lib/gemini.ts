@@ -97,7 +97,7 @@ async function processArticle(
       article.originalLanguage;
 
     const model = client.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash-lite",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: TRANSLATE_SCHEMA,
@@ -142,7 +142,7 @@ Summary: ${article.summary || "(empty)"}`;
   } else {
     // English or skipTranslation — sentiment only
     const model = client.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash-lite",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: SENTIMENT_SCHEMA,
