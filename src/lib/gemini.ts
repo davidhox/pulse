@@ -97,7 +97,7 @@ async function processArticle(
       article.originalLanguage;
 
     const model = client.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: TRANSLATE_SCHEMA,
@@ -142,7 +142,7 @@ Summary: ${article.summary || "(empty)"}`;
   } else {
     // English or skipTranslation — sentiment only
     const model = client.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: SENTIMENT_SCHEMA,
@@ -206,13 +206,32 @@ export async function processArticlesWithGemini(
     return articles;
   }
 
+  // Skip entirely for non-English sources that don't need translation (e.g. Albanian)
+  // These articles get no translation AND no sentiment analysis to save API costs
+  if (skipTranslation && articles.length > 0 && articles[0].originalLanguage !== "en") {
+    console.log(`[gemini] Skipping ${articles.length} non-English articles (skipTranslation)`);
+    return articles;
+  }
+
   const processed = [...articles];
 
-  for (let i = 0; i < processed.length; i += BATCH_SIZE) {
-    const batchIndices = [];
-    for (let j = i; j < Math.min(i + BATCH_SIZE, processed.length); j++) {
-      batchIndices.push(j);
+  // Find indices of articles that still need processing
+  const toProcess: number[] = [];
+  for (let i = 0; i < processed.length; i++) {
+    if (!processed[i].sentimentProcessed) {
+      toProcess.push(i);
     }
+  }
+
+  if (toProcess.length === 0) {
+    console.log("[gemini] All articles already processed, skipping");
+    return processed;
+  }
+
+  console.log(`[gemini] Processing ${toProcess.length}/${processed.length} unprocessed articles`);
+
+  for (let i = 0; i < toProcess.length; i += BATCH_SIZE) {
+    const batchIndices = toProcess.slice(i, i + BATCH_SIZE);
 
     const results = await Promise.allSettled(
       batchIndices.map((idx) => processArticle(processed[idx], client, skipTranslation))
@@ -226,7 +245,7 @@ export async function processArticlesWithGemini(
       }
     }
 
-    if (i + BATCH_SIZE < processed.length) {
+    if (i + BATCH_SIZE < toProcess.length) {
       await delay(BATCH_DELAY_MS);
     }
   }
